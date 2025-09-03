@@ -21,6 +21,33 @@ router
 // New Route
 router.get("/new", isLoggedIn, listingController.renderNewForm);
 
+// Search listings by country
+router.get("/search", async (req, res) => {
+  try {
+    const { country } = req.query;
+    let listings;
+
+    if (country) {
+      listings = await Listing.find({
+        country: { $regex: new RegExp(country, "i") },
+      });
+    } else {
+      listings = await Listing.find({});
+    }
+
+    if (listings.length === 0) {
+      req.flash("error", `No listings found for "${country}"`);
+      return res.redirect("/listings");
+    }
+
+    res.render("listings/index", { allListings: listings });
+  } catch (err) {
+    console.error(err);
+    req.flash("error", "Something went wrong while searching!");
+    res.redirect("/listings");
+  }
+});
+
 router
   .route("/:id")
   .get(wrapAsync(listingController.showListing))
